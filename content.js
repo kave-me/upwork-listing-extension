@@ -1,11 +1,22 @@
 // Create and inject the sidebar
 function createSidebar() {
+  // Check if the current URL matches the allowed pages
+  const allowedUrls = [
+    "https://www.upwork.com/nx/find-work/best-matches",
+    "https://www.upwork.com/nx/find-work/most-recent",
+  ];
+  if (!allowedUrls.includes(window.location.href)) {
+    return; // Exit if the URL is not allowed
+  }
+
   const sidebar = document.createElement("div");
   sidebar.id = "upwork-filter-sidebar";
+  sidebar.classList.add("collapsed"); // Sidebar is collapsed by default
 
   const toggleButton = document.createElement("button");
   toggleButton.id = "sidebar-toggle";
   toggleButton.textContent = "<<";
+  toggleButton.classList.add("collapsed"); // Toggle button is collapsed by default
   toggleButton.addEventListener("click", toggleSidebar);
 
   sidebar.innerHTML = `
@@ -58,9 +69,9 @@ function toggleSidebar() {
   toggle.classList.toggle("collapsed");
 
   if (toggle.textContent === "<<") {
-    toggle.textContent = ">>";
+    toggle.textContent = ">>"; // Arrow points left when sidebar is closed
   } else {
-    toggle.textContent = "<<";
+    toggle.textContent = "<<"; // Arrow points right when sidebar is open
   }
 }
 
