@@ -10,7 +10,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.upwork.com/*"],
+      "matches": ["https://www.upwork.com/*"],
       "js": ["content.js"],
       "css": ["sidebar.css"]
     }

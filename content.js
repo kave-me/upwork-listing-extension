@@ -1,27 +1,27 @@
 // Create and inject the sidebar
 function createSidebar() {
-  // Check if the current URL matches the allowed pages
+  console.log("Creating sidebar...");
   const allowedUrls = [
     "https://www.upwork.com/nx/find-work/best-matches",
     "https://www.upwork.com/nx/find-work/most-recent",
   ];
   if (!allowedUrls.includes(window.location.href)) {
-    return; // Exit if the URL is not allowed
+    console.warn("Sidebar not created: URL not allowed", window.location.href);
+    return;
   }
 
   const sidebar = document.createElement("div");
   sidebar.id = "upwork-filter-sidebar";
-  sidebar.classList.add("collapsed"); // Sidebar is collapsed by default
+  sidebar.classList.add("collapsed");
 
   const toggleButton = document.createElement("button");
   toggleButton.id = "sidebar-toggle";
   toggleButton.textContent = "<<";
-  toggleButton.classList.add("collapsed"); // Toggle button is collapsed by default
+  toggleButton.classList.add("collapsed");
   toggleButton.addEventListener("click", toggleSidebar);
 
   sidebar.innerHTML = `
     <h2>Job Filter</h2>
-    
     <div class="filter-section">
       <h3>Proposals</h3>
       <div class="filter-option">
@@ -40,7 +40,6 @@ function createSidebar() {
         <label><input type="checkbox" id="proposals-50-plus"> 50+</label>
       </div>
     </div>
-    
     <button id="apply-filter" class="apply-filter-btn">Apply Filters</button>
     <button id="reset-filter" class="reset-filter-btn">Reset Filters</button>
   `;
@@ -48,35 +47,30 @@ function createSidebar() {
   document.body.appendChild(sidebar);
   document.body.appendChild(toggleButton);
 
-  // Add event listeners
-  document
-    .getElementById("apply-filter")
-    .addEventListener("click", applyFilters);
-  document
-    .getElementById("reset-filter")
-    .addEventListener("click", resetFilters);
+  console.log("Sidebar and toggle button added to DOM.");
 
-  // Load saved filters
+  document.getElementById("apply-filter").addEventListener("click", applyFilters);
+  document.getElementById("reset-filter").addEventListener("click", resetFilters);
+
   loadSavedFilters();
 }
 
 // Toggle sidebar visibility
 function toggleSidebar() {
+  console.log("Toggling sidebar...");
   const sidebar = document.getElementById("upwork-filter-sidebar");
   const toggle = document.getElementById("sidebar-toggle");
 
   sidebar.classList.toggle("collapsed");
   toggle.classList.toggle("collapsed");
 
-  if (toggle.textContent === "<<") {
-    toggle.textContent = ">>"; // Arrow points left when sidebar is closed
-  } else {
-    toggle.textContent = "<<"; // Arrow points right when sidebar is open
-  }
+  toggle.textContent = toggle.textContent === "<<" ? ">>" : "<<";
+  console.log("Sidebar toggled. Current state:", sidebar.classList.contains("collapsed") ? "collapsed" : "expanded");
 }
 
 // Save filters to chrome.storage
 function saveFilters() {
+  console.log("Saving filters...");
   const filters = {
     proposalsLess5: document.getElementById("proposals-less-5").checked,
     proposals5to10: document.getElementById("proposals-5-10").checked,
@@ -85,65 +79,52 @@ function saveFilters() {
     proposals50Plus: document.getElementById("proposals-50-plus").checked,
   };
 
-  chrome.storage.local.set({ upworkFilters: filters });
+  chrome.storage.local.set({ upworkFilters: filters }, () => {
+    console.log("Filters saved:", filters);
+  });
 }
 
 // Load saved filters from chrome.storage
 function loadSavedFilters() {
+  console.log("Loading saved filters...");
   chrome.storage.local.get("upworkFilters", (data) => {
     if (data.upworkFilters) {
-      document.getElementById("proposals-less-5").checked =
-        data.upworkFilters.proposalsLess5 || false;
-      document.getElementById("proposals-5-10").checked =
-        data.upworkFilters.proposals5to10 || false;
-      document.getElementById("proposals-10-15").checked =
-        data.upworkFilters.proposals10to15 || false;
-      document.getElementById("proposals-20-50").checked =
-        data.upworkFilters.proposals20to50 || false;
-      document.getElementById("proposals-50-plus").checked =
-        data.upworkFilters.proposals50Plus || false;
+      console.log("Saved filters found:", data.upworkFilters);
+      document.getElementById("proposals-less-5").checked = data.upworkFilters.proposalsLess5 || false;
+      document.getElementById("proposals-5-10").checked = data.upworkFilters.proposals5to10 || false;
+      document.getElementById("proposals-10-15").checked = data.upworkFilters.proposals10to15 || false;
+      document.getElementById("proposals-20-50").checked = data.upworkFilters.proposals20to50 || false;
+      document.getElementById("proposals-50-plus").checked = data.upworkFilters.proposals50Plus || false;
+    } else {
+      console.info("No saved filters found. This is expected if no filters have been applied yet.");
     }
   });
 }
 
 // Apply filters to job listings
 function applyFilters() {
-  // Reset previous highlights
+  console.log("Applying filters...");
   resetHighlights();
-
-  // Save current filters
   saveFilters();
 
-  // Get filter values
   const proposalsLess5 = document.getElementById("proposals-less-5").checked;
   const proposals5to10 = document.getElementById("proposals-5-10").checked;
   const proposals10to15 = document.getElementById("proposals-10-15").checked;
   const proposals20to50 = document.getElementById("proposals-20-50").checked;
   const proposals50Plus = document.getElementById("proposals-50-plus").checked;
 
-  // Select all job tiles
-  const jobTiles = document.querySelectorAll(
-    '[data-test="job-tile-container"]'
-  );
+  const jobTiles = document.querySelectorAll('[data-test="job-tile-container"]');
+  console.log("Found job tiles:", jobTiles.length);
 
-  // Apply filters to each job tile
   jobTiles.forEach((tile) => {
     let matches = true;
-
-    // Proposals
-    const proposalsText =
-      tile.querySelector('[data-test="job-tile-proposals"]')?.textContent || "";
+    const proposalsText = tile.querySelector('[data-test="job-tile-proposals"]')?.textContent || "";
     const proposalsMatch = proposalsText.match(/(\d+)\s*to\s*(\d+)|(\d+)\+/);
     let proposals = 0;
     if (proposalsMatch) {
-      if (proposalsMatch[3]) {
-        proposals = parseInt(proposalsMatch[3], 10);
-      } else {
-        proposals = parseInt(proposalsMatch[2], 10);
-      }
+      proposals = proposalsMatch[3] ? parseInt(proposalsMatch[3], 10) : parseInt(proposalsMatch[2], 10);
     }
 
-    // Check proposals
     const proposalMatches =
       (proposalsLess5 && proposals < 5) ||
       (proposals5to10 && proposals >= 5 && proposals <= 10) ||
@@ -152,78 +133,46 @@ function applyFilters() {
       (proposals50Plus && proposals >= 50);
 
     if (
-      (proposalsLess5 ||
-        proposals5to10 ||
-        proposals10to15 ||
-        proposals20to50 ||
-        proposals50Plus) &&
+      (proposalsLess5 || proposals5to10 || proposals10to15 || proposals20to50 || proposals50Plus) &&
       !proposalMatches
     ) {
       matches = false;
     }
 
-    // Show or hide the job tile based on match status
-    if (matches) {
-      tile.style.display = "block"; // Show matched items
-    } else {
-      tile.style.display = "none"; // Hide non-matched items
-    }
+    tile.style.display = matches ? "block" : "none";
   });
-}
 
-// Parse number from string like "$5K+" or "$1,000"
-function parseNumber(str) {
-  // Remove $ and commas
-  str = str.replace(/[$,]/g, "");
-
-  // Handle K (thousands)
-  if (str.includes("K")) {
-    str = str.replace("K", "");
-    return parseFloat(str) * 1000;
-  }
-
-  // Handle M (millions)
-  if (str.includes("M")) {
-    str = str.replace("M", "");
-    return parseFloat(str) * 1000000;
-  }
-
-  // Handle plus sign (minimum value)
-  if (str.includes("+")) {
-    str = str.replace("+", "");
-  }
-
-  return parseFloat(str);
+  console.log("Filters applied.");
 }
 
 // Reset all filters
 function resetFilters() {
-  // Clear filter inputs
+  console.log("Resetting filters...");
   document.getElementById("proposals-less-5").checked = false;
   document.getElementById("proposals-5-10").checked = false;
   document.getElementById("proposals-10-15").checked = false;
   document.getElementById("proposals-20-50").checked = false;
   document.getElementById("proposals-50-plus").checked = false;
 
-  // Reset highlights and show all items
   resetHighlights();
-
-  // Clear saved filters
-  chrome.storage.local.remove("upworkFilters");
+  chrome.storage.local.remove("upworkFilters", () => {
+    console.log("Filters cleared from storage.");
+  });
 }
 
 // Reset all highlights and show all items
 function resetHighlights() {
-  const jobTiles = document.querySelectorAll(
-    '[data-test="job-tile-container"]'
-  );
+  console.log("Resetting highlights...");
+  const jobTiles = document.querySelectorAll('[data-test="job-tile-container"]');
   jobTiles.forEach((tile) => {
-    tile.style.display = ""; // Reset to default display state
+    tile.style.display = "";
   });
+  console.log("Highlights reset.");
 }
 
 // Observer to handle dynamically loaded job listings
 function setupMutationObserver() {
+  console.log("Setting up mutation observer...");
   const observer = new MutationObserver((mutations) => {
     let shouldReapplyFilters = false;
 
@@ -243,20 +192,23 @@ function setupMutationObserver() {
     }
 
     if (shouldReapplyFilters) {
+      console.log("New job tiles detected. Reapplying filters...");
       applyFilters();
     }
   });
 
-  const jobFeedContainer = document.querySelector(
-    '[data-test="jobs-feed-container"]'
-  );
+  const jobFeedContainer = document.querySelector('[data-test="jobs-feed-container"]');
   if (jobFeedContainer) {
     observer.observe(jobFeedContainer, { childList: true, subtree: true });
+    console.log("Mutation observer attached to job feed container.");
+  } else {
+    console.warn("Job feed container not found. Mutation observer not attached.");
   }
 }
 
 // Initialize extension
 function init() {
+  console.log("Initializing extension...");
   createSidebar();
   setupMutationObserver();
 }
