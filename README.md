@@ -18,7 +18,7 @@ This Chrome extension allows you to filter job listings on Upwork based on the n
 1. **Clone the Repository**: Clone this repository to your local machine using:
 
    ```bash
-   git clone https://github.com/kave-me/upwork-job-filter.git
+   git clone https://github.com/kave-me/upwork-listing-extension.git
    ```
 
 2. **Load the Extension in Chrome**:
